@@ -63,8 +63,6 @@ current_pattern=0
 
 while IFS= read -r pattern; do
     [[ -z "$pattern" ]] && continue
-    ((current_pattern++))
-    echo -ne "Searching for pattern: ($current_pattern / $total_patterns)       \r"
 
     if [[ "$pattern" =~ \\\($ ]]; then
         mysql_pattern="${pattern//\(/\\\\(}"
@@ -88,6 +86,10 @@ while IFS= read -r pattern; do
           echo "SELECT '$table', '$column', '$esc_display', NULL, LEFT($column, 200) FROM $table WHERE $column REGEXP '$esc_pattern';" >> "$SQL_TMPFILE"
         fi
     done <<< "$columns"
+
+    ((current_pattern++))
+    echo -ne "Searched patterns: $current_pattern / $total_patterns       \r"
+
 done < "$PATTERNS_FILE"
 
 cat <<EOF >> "$SQL_TMPFILE"
