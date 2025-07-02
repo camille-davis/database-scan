@@ -64,7 +64,7 @@ while IFS= read -r pattern; do
     [[ -z "$pattern" ]] && continue
 
     if [[ "$pattern" =~ \\\($ ]]; then
-        mysql_pattern="${pattern//\(/\\\\(}"
+        mysql_pattern="${pattern//\(/\\(}"
         display_pattern="$pattern"
     else
         mysql_pattern="$pattern"
