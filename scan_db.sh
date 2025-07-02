@@ -60,7 +60,6 @@ echo "Searching for patterns... this may take a while."
 
 total_patterns=$(grep -v '^[[:space:]]*$' "$PATTERNS_FILE" | wc -l | tr -d ' ')
 current_pattern=0
-
 while IFS= read -r pattern; do
     [[ -z "$pattern" ]] && continue
 
@@ -87,7 +86,7 @@ while IFS= read -r pattern; do
         fi
     done <<< "$columns"
 
-    ((current_pattern++))
+    current_pattern=$((current_pattern+1))
     echo -ne "Searched patterns: $current_pattern / $total_patterns       \r"
 
 done < "$PATTERNS_FILE"
