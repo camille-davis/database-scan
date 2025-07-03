@@ -45,6 +45,7 @@ SET SESSION net_read_timeout=600;
 SET SESSION net_write_timeout=600;
 SET SESSION wait_timeout=600;
 SET SESSION max_execution_time=600000;
+SET GLOBAL regexp_time_limit=600000;
 
 CREATE TEMPORARY TABLE IF NOT EXISTS scan_search_results (
     table_name VARCHAR(100),
