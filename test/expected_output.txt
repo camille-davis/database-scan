@@ -1,0 +1,7 @@
+table_name	column_name	pattern_found	occurrences
+comments	author	(?i)base64_decode(	1
+comments	author	(?i)http	1
+comments	content	(?i)http	2
+reviews	author	(?i)base64_decode(	1
+reviews	author	(?i)http	1
+reviews	content	(?i)(<script>|</script>|javascript:)	2
