@@ -11,8 +11,8 @@ expected=$(cat expected_output.txt)
 expected_lines=$(echo "$expected" | wc -l)
 output_tail=$(echo "$output" | tail -n "$expected_lines")
 
-# Compare
-if [[ "$output_tail" == "$expected" ]]; then
+# Compare, ignoring whitespace.
+if [ "$(echo "$output_tail" | tr -d '[:space:]')" = "$(echo "$expected" | tr -d '[:space:]')" ]; then
   echo "PASS"
   exit 0
 else

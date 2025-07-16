@@ -18,7 +18,7 @@ CREATE TABLE reviews (
 );
 
 INSERT INTO reviews (author, content) VALUES
-    ('http://spammer.com', 'Nice product!'),
+    ('HTTP://spammer.com', 'Nice product!'),
     ('alice', '<script>run_malware()</script>'),
     ('base64_decode(virus)', '<script>run_malware()</script>'),
     ('joe', 'I loved it!');

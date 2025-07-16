@@ -1,7 +1,7 @@
 #!/bin/bash
-set -e
-# Usage: ./scan_db.sh sql_file patterns_file
+set -e # exit on error
 
+# Get args.
 if [ -z "$1" ] || [ -z "$2" ]; then
   echo "Usage: $0 sql_file patterns_file"
   echo "patterns_file should include one pattern per line."
@@ -12,6 +12,7 @@ PATTERNS_FILE="$2"
 CONTAINER_NAME="mysql-temp-$$" # unique name per run
 SQL_TMPFILE=$(mktemp)
 
+# If the script is interrupted, stop the container.
 cleanup() {
   docker stop $CONTAINER_NAME > /dev/null 2>&1 || true
 }
@@ -30,24 +31,14 @@ echo "Waiting for database to be ready..."
 until docker exec $CONTAINER_NAME mysqladmin ping -h 127.0.0.1 -u root -prootpassword --silent > /dev/null 2>&1; do
   sleep 1
 done
-
 until docker exec $CONTAINER_NAME mysql -h 127.0.0.1 -u root -prootpassword -e "USE testdb;" 2>/dev/null; do
   sleep 1
 done
 
-columns=$(docker exec $CONTAINER_NAME mysql -h 127.0.0.1 -u root -prootpassword -N -e \
-  "SELECT TABLE_NAME, COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='testdb' AND DATA_TYPE IN ('char','varchar','text','tinytext','mediumtext','longtext');" 2>/dev/null)
-
+# Create a temporary SQL file. Add a temporary table to store scan results.
 cat <<EOF > "$SQL_TMPFILE"
--- Auto-generated SQL script to search for patterns
 USE testdb;
-SET SESSION net_read_timeout=600;
-SET SESSION net_write_timeout=600;
-SET SESSION wait_timeout=600;
-SET SESSION max_execution_time=600000;
-SET GLOBAL regexp_time_limit=600000;
-
-CREATE TEMPORARY TABLE IF NOT EXISTS scan_search_results (
+CREATE TABLE scan_search_results (
     table_name VARCHAR(100),
     column_name VARCHAR(100),
     pattern_found VARCHAR(200),
@@ -57,43 +48,27 @@ CREATE TEMPORARY TABLE IF NOT EXISTS scan_search_results (
 );
 EOF
 
-echo "Searching for patterns... this may take a while."
+echo "Searching for patterns..."
 
-total_patterns=$(grep -v '^[[:space:]]*$' "$PATTERNS_FILE" | wc -l | tr -d ' ')
-current_pattern=0
+# Get each column in "table column" format.
+columns=$(docker exec $CONTAINER_NAME mysql -h 127.0.0.1 -u root -prootpassword -N -e \
+  "SELECT TABLE_NAME, COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='testdb' AND DATA_TYPE IN ('char','varchar','text','tinytext','mediumtext','longtext');" 2>/dev/null)
+
+# Go through the patterns file line by line.
 while IFS= read -r pattern; do
+
+    # Skip empty lines.
     [[ -z "$pattern" ]] && continue
 
-    if [[ "$pattern" =~ \\\($ ]]; then
-        mysql_pattern="${pattern//\(/\\(}"
-        display_pattern="$pattern"
-    else
-        mysql_pattern="$pattern"
-        display_pattern="$pattern"
-    fi
-    esc_pattern=$(echo "$mysql_pattern" | sed "s/'/''/g")
-    esc_display=$(echo "$display_pattern" | sed "s/'/''/g")
+    # For each column, add a statement to the SQL file that inserts pattern matches into scan_search_results.
     while IFS=$'\t' read -r table column; do
-        pk=$(docker exec $CONTAINER_NAME mysql -h 127.0.0.1 -u root -prootpassword -N -e \
-          "SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='testdb' AND TABLE_NAME='$table' AND COLUMN_KEY IN ('PRI','UNI') LIMIT 1;" 2>/dev/null)
-        if [ -z "$pk" ]; then
-          pk="NULL"
-        fi
-        echo "INSERT INTO scan_search_results (table_name, column_name, pattern_found, row_id, sample_data)" >> "$SQL_TMPFILE"
-        if [ "$pk" != "NULL" ]; then
-          echo "SELECT '$table', '$column', '$esc_display', $pk, LEFT($column, 200) FROM $table WHERE $column REGEXP '$esc_pattern';" >> "$SQL_TMPFILE"
-        else
-          echo "SELECT '$table', '$column', '$esc_display', NULL, LEFT($column, 200) FROM $table WHERE $column REGEXP '$esc_pattern';" >> "$SQL_TMPFILE"
-        fi
+        echo "INSERT INTO scan_search_results (table_name, column_name, pattern_found, sample_data)" >> "$SQL_TMPFILE"
+        echo "SELECT '$table', '$column', '$pattern', LEFT($column, 200) FROM $table WHERE LOWER($column) LIKE LOWER('%$pattern%');" >> "$SQL_TMPFILE"
     done <<< "$columns"
-
-    current_pattern=$((current_pattern+1))
-    echo -ne "Searched patterns: $current_pattern / $total_patterns       \r"
-
 done < "$PATTERNS_FILE"
 
+# Add a select statement to display a summary.
 cat <<EOF >> "$SQL_TMPFILE"
--- Display results summary
 SELECT
     table_name,
     column_name,
@@ -106,8 +81,7 @@ ORDER BY table_name, column_name, pattern_found;
 DROP TEMPORARY TABLE IF EXISTS scan_search_results;
 EOF
 
-echo ""
-echo "Writing summary..."
+# Run all the SQL.
 docker exec -i $CONTAINER_NAME mysql -h 127.0.0.1 -u root -prootpassword testdb < "$SQL_TMPFILE"
 
 rm -f "$SQL_TMPFILE"
