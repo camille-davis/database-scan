@@ -1,0 +1,18 @@
+mysql> select * from reviews where author = 'joe';
++--------+---------------+
+| author | content       |
++--------+---------------+
+| joe    | I loved it!   |
+| joe    | It's me again |
++--------+---------------+
+2 rows in set (0.001 sec)
+
+mysql> select * from comments where author = 'normaluser';
++------------+-------------------------+
+| author     | content                 |
++------------+-------------------------+
+| normaluser | This is a safe comment. |
+| normaluser | Commenting again!       |
++------------+-------------------------+
+2 rows in set (0.001 sec)
+

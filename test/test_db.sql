@@ -9,7 +9,8 @@ INSERT INTO comments (author, content) VALUES
     ('normaluser', 'This is a safe comment.'),
     ('base64_decode(virus)', 'All good here.'),
     ('http://spammer.com', 'Get more spam at: http://spammer.com'),
-    ('bob', 'Try wget http://malicious.com');
+    ('bob', 'Try wget http://malicious.com'),
+    ('normaluser', 'Commenting again!');
 
 -- Table: reviews
 CREATE TABLE reviews (
@@ -21,4 +22,5 @@ INSERT INTO reviews (author, content) VALUES
     ('HTTP://spammer.com', 'Nice product!'),
     ('alice', '<script>run_malware()</script>'),
     ('base64_decode(virus)', '<script>run_malware()</script>'),
-    ('joe', 'I loved it!');
+    ('joe', 'I loved it!'),
+    ('joe', 'It''s me again');

@@ -1,5 +1,8 @@
 # Database tools
 
+## Requirements
+Docker
+
 ## scan_db.sh
 
 Searches through a SQL file for a list of patterns using MySQL LIKE.
@@ -22,5 +25,21 @@ Starts a mysql container and populates it with a SQL file.
 ./open_db.sh <sql_file>
 ```
 
-## Requirements
-Docker
+## create_insert_from_select.sh
+
+Turns given select statements and their output into insert statements.
+
+### Usage
+
+In MySQL, run one or more select statements. Copy and paste the console output to a file so it looks like this:
+```
+mysql> <select statement 1>
+<output 1>
+mysql> <select statement 2>
+<output 2>
+```
+
+Then run:
+```
+./create_insert_from_select.sh <file>
+```

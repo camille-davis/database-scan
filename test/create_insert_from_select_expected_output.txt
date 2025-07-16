@@ -1,0 +1,4 @@
+INSERT INTO `reviews` (`author`, `content`) VALUES ('joe', 'I loved it!');
+INSERT INTO `reviews` (`author`, `content`) VALUES ('joe', 'It''s me again');
+INSERT INTO `comments` (`author`, `content`) VALUES ('normaluser', 'This is a safe comment.');
+INSERT INTO `comments` (`author`, `content`) VALUES ('normaluser', 'Commenting again!');
